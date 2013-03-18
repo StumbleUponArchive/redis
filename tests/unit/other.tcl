@@ -227,6 +227,16 @@ start_server {tags {"other"}} {
         set _ $err
     } {}
 
+    test {APPENDX basics, key exists} {
+        list [r set foo bar] [r get foo] \
+             [r appendx foo 100] [r get foo]
+    } {OK bar 6 bar100}
+
+    test {APPENDX basics, key does not exists} {
+        r del foo
+        list [r appendx foo dog] [r get foo]
+    } {0 {}}
+
     # Leave the user with a clean DB before to exit
     test {FLUSHDB} {
         set aux {}

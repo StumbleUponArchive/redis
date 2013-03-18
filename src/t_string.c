@@ -357,12 +357,17 @@ void incrbyfloatCommand(redisClient *c) {
     rewriteClientCommandArgument(c,2,new);
 }
 
-void appendCommand(redisClient *c) {
+void appendGenericCommand(redisClient *c, int nx) {
     size_t totlen;
     robj *o, *append;
 
     o = lookupKeyWrite(c->db,c->argv[1]);
     if (o == NULL) {
+        if (!nx) {
+            addReply(c,shared.czero);
+            return;
+        }
+
         /* Create the key */
         c->argv[2] = tryObjectEncoding(c->argv[2]);
         dbAdd(c->db,c->argv[1],c->argv[2]);
@@ -395,6 +400,14 @@ void appendCommand(redisClient *c) {
     notifyKeyspaceEvent(REDIS_NOTIFY_STRING,"append",c->argv[1],c->db->id);
     server.dirty++;
     addReplyLongLong(c,totlen);
+}
+
+void appendxCommand(redisClient *c) {
+    appendGenericCommand(c, 0);
+}
+
+void appendCommand(redisClient *c) {
+    appendGenericCommand(c, 1);
 }
 
 void strlenCommand(redisClient *c) {
