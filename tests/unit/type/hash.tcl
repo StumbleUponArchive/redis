@@ -107,6 +107,78 @@ start_server {tags {"hash"}} {
         set _ $result
     } {foo}
 
+    test {HAPPEND target key missing - small hash} {
+        set rv {}
+        lappend rv [r happend smallhash __123123123__ foo]
+        lappend rv [r hget smallhash __123123123__]
+        r hdel smallhash __123123123__
+        set _ $rv
+    } {3 foo}
+
+    test {HAPPEND target key exists - small hash} {
+        set rv {}
+        r hset smallhash __123123123__ foo
+        lappend rv [r happend smallhash __123123123__ bar]
+        lappend rv [r hget smallhash __123123123__]
+        r hdel smallhash __123123123__
+        set _ $rv
+    } {6 foobar}
+
+    test {HAPPEND target key missing - big hash} {
+        set rv {}
+        lappend rv [r happend bighash __123123123__ foo]
+        lappend rv [r hget bighash __123123123__]
+        set _ $rv
+    } {3 foo}
+
+    test {HAPPEND target key exists - big hash} {
+        set rv {}
+        r hset bighash __123123123__ foo
+        lappend rv [r happend bighash __123123123__ bar]
+        lappend rv [r hget bighash __123123123__]
+        r hdel bighash __123123123__
+        set _ $rv
+    } {6 foobar}
+
+    test {HAPPEND Is a ziplist encoded Hash promoted on big payload?} {
+        r hset myhash foo bar
+        assert_encoding ziplist myhash
+        r happend myhash foo [string repeat a 1024]
+        r debug object myhash
+    } {*hashtable*}
+
+    test {HAPPENDX target key missing - small hash} {
+        set rv {}
+        lappend rv [r happendx smallhash __123123123__ foo]
+        lappend rv [r hget smallhash __123123123__]
+        set _ $rv
+    } {0 {}}
+
+    test {HAPPENDX target key exists - small hash} {
+        set rv {}
+        r hset smallhash __123123123__ foo
+        lappend rv [r happendx smallhash __123123123__ bar]
+        lappend rv [r hget smallhash __123123123__]
+        r hdel smallhash __123123123__
+        set _ $rv
+    } {6 foobar}
+
+    test {HAPPENDX target key missing - big hash} {
+        set rv {}
+        lappend rv [r happendx bighash __123123123__ foo]
+        lappend rv [r hget bighash __123123123__]
+        set _ $rv
+    } {0 {}}
+
+    test {HAPPENDX target key exists - big hash} {
+        set rv {}
+        r hset bighash __123123123__ foo
+        lappend rv [r happendx bighash __123123123__ bar]
+        lappend rv [r hget bighash __123123123__]
+        r hdel bighash __123123123__
+        set _ $rv
+    } {6 foobar}
+
     test {HMSET wrong number of args} {
         catch {r hmset smallhash key1 val1 key2} err
         format $err
